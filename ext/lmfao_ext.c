@@ -5,6 +5,49 @@
 static VALUE mLMFAO_call_nogvl(void *data);
 void *lmfao_callback(void *data);
 
+/* * * * * * * * * * * * * * * * * * * * * * * * *
+ * Functions related to the global callback queue.
+ * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/*
+   Three globals to allow for Ruby/C-thread communication:
+
+   - mutex & condition to synchronize access to callback_queue
+   - callback_queue to store actual callback data in
+
+   Be careful with the functions that manipulate the callback
+   queue; they must do so in the protection of a mutex.
+*/
+pthread_mutex_t g_callback_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t g_callback_cond   = PTHREAD_COND_INITIALIZER;
+callback_t *g_callback_queue     = NULL;
+
+/*
+   Use this function to add a callback node onto the global
+   callback queue.
+*/
+void g_callback_queue_push(callback_t *callback)
+{
+  callback->next   = g_callback_queue;
+  g_callback_queue = callback;
+}
+
+/*
+   Use this function to pop off a callback node from the
+   global callback queue. Returns NULL if queue is empty.
+*/
+callback_t *g_callback_queue_pop(void)
+{
+  callback_t *callback = g_callback_queue;
+  if (callback)
+  {
+    g_callback_queue = callback->next;
+  }
+  return callback;
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 /**
  * Call LMFAO with the given argument.
  *
@@ -14,11 +57,11 @@ void *lmfao_callback(void *data);
 static VALUE mLMFAO_call(VALUE self, VALUE data)
 {
   rb_need_block();
-  
+
   VALUE args = rb_ary_new();
   rb_ary_push(args, rb_block_proc());
   rb_ary_push(args, data);
-  
+
   VALUE result = rb_thread_blocking_region(mLMFAO_call_nogvl, (void *) args, NULL, NULL);
   return result;
 }
@@ -30,7 +73,7 @@ static VALUE mLMFAO_call_nogvl(void *data)
 
 /*
   This is our user-defined C callback, it gets called by the C library.
-  
+
   We need to:
     1. acquire lock around global callback queue
     2. put (our) callback data in the global callback queue
