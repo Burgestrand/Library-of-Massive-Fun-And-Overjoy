@@ -40,7 +40,7 @@ void g_callback_queue_push(callback_t *callback)
    Use this function to pop off a callback node from the
    global callback queue. Returns NULL if queue is empty.
 */
-callback_t *g_callback_queue_pop(void)
+static callback_t *g_callback_queue_pop(void)
 {
   callback_t *callback = g_callback_queue;
   if (callback)
