@@ -11,6 +11,8 @@ struct callback_t {
   /*
      Each callback needs to store its’ data somewhere; this
      is how we later on access that data from our Ruby thread.
+
+     We also use this for our return value from the Ruby handler.
   */
   void *data;
 
