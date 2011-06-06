@@ -90,8 +90,35 @@ static VALUE mLMFAO_call_nogvl(void *data)
 */
 void *lmfao_callback(void *data)
 {
-  return (void *) Qfalse;
+  callback_t callback;
+  pthread_mutex_init(&callback.mutex, NULL);
+  pthread_cond_init(&callback.cond, NULL);
+  callback.data = data;
+  callback.handled = false;
+
+  // Put callback data in global callback queue
+  pthread_mutex_lock(&g_callback_mutex);
+  g_callback_queue_push(&callback);
+  pthread_mutex_unlock(&g_callback_mutex);
+
+  // Notify waiting Ruby thread that we have callback data
+  pthread_cond_signal(&g_callback_cond);
+
+  // Wait for callback to be handled
+  pthread_mutex_lock(&callback.mutex);
+  while (callback.handled == false)
+  {
+    pthread_cond_wait(&callback.cond, &callback.mutex);
+  }
+  pthread_mutex_unlock(&callback.mutex);
+
+  // Clean up
+  pthread_mutex_destroy(&callback.mutex);
+  pthread_cond_destroy(&callback.cond);
+
+  return callback.data;
 }
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * *
  * Our special Ruby event-listening thread functions
