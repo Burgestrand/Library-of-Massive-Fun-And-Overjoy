@@ -80,12 +80,10 @@ static VALUE mLMFAO_call_nogvl(void *data)
   This is our user-defined C callback, it gets called by the C library.
 
   We need to:
-    1. acquire lock around global callback queue
-    2. put (our) callback data in the global callback queue
-    3. signal and unlock the global callback queue
-    4. wait until the callback has been handled
-    5. clean up after ourselves
-    6. return the result to our caller
+    1. Create a callback structure, put our parameters in it
+    2. Push the callback node onto the global callback queue
+    3. Wait for the callback to be handled
+    4. Return the return value
 */
 void *lmfao_callback(void *data)
 {
