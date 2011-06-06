@@ -135,8 +135,32 @@ void *lmfao_callback(void *data)
 */
 static VALUE LMFAO_handle_callback(void *cb)
 {
+  callback_t *callback = (callback_t*) cb;
+
+  // in *our* case, the callback data always consists of
+  // 0: callback proc
+  // 1: callback params
+  // in practice, you’ll need to figure out the proper handler
+  // for this particular event, as well as convert the callback
+  // data into proper ruby values!
+  VALUE data = (VALUE) callback->data;
+  VALUE proc = rb_ary_shift(data);
+  VALUE result = rb_funcall2(proc, rb_intern("call"), RARRAY_LENINT(data), RARRAY_PTR(data));
+
+  // in *our* case, we just pass the return value back to
+  // the callback, but in practice we need to convert it to a C
+  // value that our callback can return
+  callback->data = (void *) result;
+
+  // tell the callback that it has been handled, we are done
+  pthread_mutex_lock(&callback->mutex);
+  callback->handled = true;
+  pthread_cond_signal(&callback->cond);
+  pthread_mutex_unlock(&callback->mutex);
+
   return Qnil;
 }
+
 
 typedef struct callback_waiting_t callback_waiting_t;
 struct callback_waiting_t {
