@@ -50,7 +50,9 @@ static callback_t *g_callback_queue_pop(void)
   return callback;
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * *
+ * Functions related to LMFAO Ruby API
+ * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**
  * Call LMFAO with the given argument.
@@ -66,8 +68,7 @@ static VALUE mLMFAO_call(VALUE self, VALUE data)
   rb_ary_push(args, rb_block_proc());
   rb_ary_push(args, data);
 
-  VALUE result = rb_thread_blocking_region(mLMFAO_call_nogvl, (void *) args, NULL, NULL);
-  return result;
+  return rb_thread_blocking_region(mLMFAO_call_nogvl, (void *) args, NULL, NULL);
 }
 
 static VALUE mLMFAO_call_nogvl(void *data)
