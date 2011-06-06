@@ -25,6 +25,10 @@ callback_t *g_callback_queue     = NULL;
 /*
    Use this function to add a callback node onto the global
    callback queue.
+
+   Do note that we are adding items to the front of the linked
+   list, and as such events will always be handled by most recent
+   first. To remedy this, add to the end of the queue instead.
 */
 void g_callback_queue_push(callback_t *callback)
 {
