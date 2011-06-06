@@ -14,9 +14,11 @@ begin
     string.upcase
   end
   puts "LMFAO result received."
-  
+
   assert_equal(input.upcase, result)
   assert called, "Expected callback to have been called."
+
+  puts "LMFAO result: #{result}. Success!"
 rescue MiniTest::Assertion => e
   puts "FAIL: #{e.message}"
 end
